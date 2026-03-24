@@ -1,7 +1,11 @@
 import pandas as pd
 
-def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
-             initial_capital=100000, transaction_cost=0.0015):
+def backtest(price_data, entry_signal, exit_signal,
+             stop_loss_level=0.05,
+             risk_per_trade=0.02,
+             max_allocation=0.75,
+             initial_capital=100000,
+             transaction_cost=0.0015):
 
     capital = initial_capital
     positions = {}
@@ -12,14 +16,20 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
 
     max_positions = 10
 
+    # Momentum for rankings
+    momentum = price_data.pct_change(20)
+
     for date in price_data.index:
 
         # =========================
         # 1. EXIT FIRST
         # =========================
-        for stock in list(positions.keys()):   # IMPORTANT: use list()
+        for stock in list(positions.keys()):
 
             price = price_data.loc[date, stock]
+            if pd.isna(price):
+                continue
+
             stop = positions[stock]["stop_loss"]
 
             if price <= stop or exit_signal.loc[date, stock]:
@@ -43,14 +53,16 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
 
                 del positions[stock]
 
-
-        start_capital = capital 
-        position_size = start_capital / (max_positions - len(positions))
-
         # =========================
         # 2. ENTRY AFTER EXIT
         # =========================
-        for stock in price_data.columns:
+        daily_momentum = momentum.loc[date].dropna()
+        sorted_stocks = daily_momentum.sort_values(ascending=False).index
+
+        for stock in sorted_stocks:
+
+            if stock not in price_data.columns:
+                continue
 
             if (entry_signal.loc[date, stock]
                 and stock not in positions
@@ -58,16 +70,41 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
 
                 price = price_data.loc[date, stock]
 
-                if capital >= position_size:   # safety check
+                if pd.isna(price):
+                    continue
 
-                    shares = position_size / price
-                    capital -= position_size
+                # --- Stop loss ---
+                stop_loss_price = price * (1 - stop_loss_level)
 
-                    positions[stock] = {
-                        "entry_price": price,
-                        "shares": shares,
-                        "stop_loss": price * (1 - stop_loss_level)
-                    }
+                # --- Risk calculation ---
+                risk_amount = initial_capital* risk_per_trade
+                risk_per_share = price - stop_loss_price
+
+                if risk_per_share <= 0:
+                    continue
+
+                shares = risk_amount // risk_per_share
+
+                # --- Max allocation cap ---
+                max_shares = (capital * max_allocation) // price
+                shares = min(shares, max_shares)
+
+                if shares <= 0:
+                    continue
+
+                cost = shares * price * (1 + transaction_cost)
+
+                if cost > capital:
+                    continue
+
+                # --- Enter trade ---
+                capital -= cost
+
+                positions[stock] = {
+                    "entry_price": price,
+                    "shares": shares,
+                    "stop_loss": stop_loss_price
+                }
 
         # =========================
         # 3. END-OF-DAY EQUITY
@@ -77,7 +114,9 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
         for stock in positions:
             shares = positions[stock]["shares"]
             price = price_data.loc[date, stock]
-            equity += shares * price
+
+            if not pd.isna(price):
+                equity += shares * price
 
         equity_curve.append(equity)
         equity_dates.append(date)
@@ -88,7 +127,6 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
     equity_series = pd.Series(equity_curve, index=equity_dates)
 
     returns = equity_series.pct_change().dropna()
-
     win_rate = wins / len(trades) if len(trades) > 0 else 0
 
     running_max = equity_series.cummax()
@@ -103,7 +141,6 @@ def backtest(price_data, entry_signal, exit_signal, stop_loss_level=0.15,
         "total_trades": int(len(trades)),
         "win_rate": float(win_rate),
         "max_drawdown": float(max_drawdown),
-
         "equity_curve": equity_series,
         "drawdown": drawdown,
         "returns": returns

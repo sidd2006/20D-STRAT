@@ -1,6 +1,3 @@
-import pandas as pd
-import yfinance as yf
-
 
 import pandas as pd
 import yfinance as yf
@@ -25,11 +22,15 @@ def load_data():
     tickers = [ticker + ".NS" for ticker in tickers]
 
     # DOWNLOAD DATA
-    data = yf.download(tickers, start="2020-01-01", end="2025-12-21")
+    data = yf.download(tickers, start="2023-01-01", end="2025-12-21",auto_adjust=True)#auto-ajust works for splits
 
-    close_prices = data["Close"]
-    close_prices = close_prices.round(2)
+    data["Close"].round(2).to_csv("data/close_prices.csv")
+    data["High"].round(2).to_csv("data/high_prices.csv")
+    data["Low"].round(2).to_csv("data/low_prices.csv")
+    data["Open"].round(2).to_csv("data/open_prices.csv")
 
-    close_prices.to_csv("data/price_data.csv")
-
-    return close_prices
+    close_prices = data["Close"].round(2)
+    return {
+        "close":close_prices,
+        "ohlc":data
+    }
