@@ -1,11 +1,11 @@
-from src.data_loader import load_data
-from src.data_cleaning import run_all
+from src.data_loader import fetch_price_data
+from src.data_cleaning_main import run_all
 from src.strategy import breakout_strat
 from src.backtest import backtest
 from src.visualization import plot_results
 
 # Step 1: Load data
-data_bundle = load_data()  #STONGEST 10 STOCKS, SHARPE RATIO, 1% risk
+data_bundle = fetch_price_data()  #STONGEST 10 STOCKS, SHARPE RATIO, 1% risk
 
 price_data = data_bundle["close"]
 ohlc = data_bundle["ohlc"]

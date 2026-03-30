@@ -8,10 +8,10 @@ import logging
 import os
 
 # ---- Your credentials ----
-API_KEY      = ""
-CLIENT_ID    = ""
-PASSWORD     = ""
-TOTP_SECRET  = ""
+API_KEY      = "KMW3pBs4"
+CLIENT_ID    = "AABZ520811"
+PASSWORD     = "2826"
+TOTP_SECRET  = "ZQFDIWN2563S4WJPG4JNQIUY4U"
 
 # ---- Settings ----
 INITIAL_CAPITAL  = 100000
