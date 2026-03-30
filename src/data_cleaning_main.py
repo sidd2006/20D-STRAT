@@ -8,7 +8,7 @@ def run_all(price_data):
 
 def clean_missing_values(price_data, max_gap_pct = 0.05):
   # remove the ones which have more than 5% Nan or like they have all rows Nan holiday or smtg
-  missing_pct = price_data.isna().mean()  
+  missing_pct = price_data.isna().mean()    
   bad_stocks = missing_pct[missing_pct > max_gap_pct].index
   price_data = price_data.drop(columns=bad_stocks)
 

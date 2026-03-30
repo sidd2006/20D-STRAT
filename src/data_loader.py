@@ -1,36 +1,98 @@
-
 import pandas as pd
-import yfinance as yf
-import requests
+from datetime import datetime, timedelta
+import logging
+import time 
 
-def load_data():
+logger = logging.getLogger(__name__)
 
-    # GET NIFTY 50 TICKERS
-    url = "https://en.wikipedia.org/wiki/NIFTY_50"
+# -------------------------------------------------------
+# WATCHLIST: Add your stocks here
+# Format: { "SYMBOL": "TOKEN" }
+# Token is the AngelOne instrument token for each stock
+# Get full token list from:
+# https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json
+# -------------------------------------------------------
+WATCHLIST = {
+    "RELIANCE": "2885",
+    "TCS": "11536",
+    "INFY": "1594",
+    "HDFCBANK": "1333",
+    "ICICIBANK": "4963",
+    "SBIN": "3045",
+    "WIPRO": "3787",
+    "AXISBANK": "5900",
+    "BAJFINANCE": "317",
+    "TITAN": "3506",
+    "MARUTI": "10999",
+    "LTIM": "17818",
+    "SUNPHARMA": "3351",
+    "ASIANPAINT": "236",
+    "HCLTECH": "7229",
+    "NESTLEIND": "17963",
+    "ULTRACEMCO": "11532",
+    "TATAMOTORS": "3456",
+    "TATASTEEL": "3499",
+    "KOTAKBANK": "1922",
+}
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-    }
 
-    response = requests.get(url, headers=headers)
+def fetch_price_data(broker, days_back=60, interval="ONE_DAY"):
+    """
+    Fetch close price data for all stocks in WATCHLIST.
+    Returns a DataFrame with dates as index, symbols as columns.
+    """
+    to_date = datetime.now()
+    from_date = to_date - timedelta(days=days_back)
 
-    tables = pd.read_html(response.text)
+    from_str = from_date.strftime("%Y-%m-%d 09:15")
+    to_str = to_date.strftime("%Y-%m-%d 15:30")
 
-    nifty_table = tables[1]
+    all_close = {}
 
-    tickers = nifty_table["Symbol"].tolist()
-    tickers = [ticker + ".NS" for ticker in tickers]
+    for symbol, token in WATCHLIST.items():
+        try:
+            raw = broker.get_candle_data(
+                token=token,
+                interval=interval,
+                from_date=from_str,
+                to_date=to_str
+            )
 
-    # DOWNLOAD DATA
-    data = yf.download(tickers, start="2023-01-01", end="2025-12-21",auto_adjust=True)#auto-ajust works for splits
+            if not raw or "data" not in raw:
+                logger.warning(f"No data for {symbol}")
+                continue
 
-    data["Close"].round(2).to_csv("data/close_prices.csv")
-    data["High"].round(2).to_csv("data/high_prices.csv")
-    data["Low"].round(2).to_csv("data/low_prices.csv")
-    data["Open"].round(2).to_csv("data/open_prices.csv")
+            # AngelOne candle format: [timestamp, open, high, low, close, volume]
+            df = pd.DataFrame(raw["data"], columns=["datetime", "open", "high", "low", "close", "volume"])
+            df["datetime"] = pd.to_datetime(df["datetime"])
+            df.set_index("datetime", inplace=True)
 
-    close_prices = data["Close"].round(2)
-    return {
-        "close":close_prices,
-        "ohlc":data
-    }
+            all_close[symbol] = df["close"]
+            logger.info(f"Fetched {len(df)} candles for {symbol}")
+
+        except Exception as e:
+            logger.error(f"Error fetching {symbol}: {e}")
+
+        time.sleep(0.5)
+
+    if not all_close:
+        logger.error("No data fetched for any stock!")
+        return None, None
+
+    price_data = pd.DataFrame(all_close)
+    price_data = price_data.sort_index()
+
+    # Also build OHLC dict for indicators if needed
+    ohlc = {}  # Can extend later if strategy needs OHLC
+
+    return price_data, ohlc
+
+
+def get_latest_prices(broker):
+    """Get current LTP for all watchlist stocks."""
+    prices = {}
+    for symbol, token in WATCHLIST.items():
+        ltp = broker.get_ltp("NSE", symbol, token)
+        if ltp:
+            prices[symbol] = ltp
+    return prices

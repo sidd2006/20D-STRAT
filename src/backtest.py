@@ -14,7 +14,7 @@ def backtest(price_data, entry_signal, exit_signal,
     trades = []
     wins = losses = 0
 
-    max_positions = 10
+    max_positions = 7
 
     # Momentum for rankings
     momentum = price_data.pct_change(20)
@@ -58,6 +58,7 @@ def backtest(price_data, entry_signal, exit_signal,
         # =========================
         daily_momentum = momentum.loc[date].dropna()
         sorted_stocks = daily_momentum.sort_values(ascending=False).index
+
 
         for stock in sorted_stocks:
 
