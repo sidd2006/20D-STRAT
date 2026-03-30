@@ -7,11 +7,10 @@ import json
 import logging
 import os
 
-# ---- Your credentials ----
-API_KEY      = ""
-CLIENT_ID    = ""
-PASSWORD     = ""
-TOTP_SECRET  = ""
+api_key = os.getenv("API_KEY")
+client_id = os.getenv("CLIENT_ID")
+password = os.getenv("PASSWORD")
+totp = os.getenv("TOTP_SECRET")
 
 # ---- Settings ----
 INITIAL_CAPITAL  = 100000
@@ -59,7 +58,7 @@ def main():
         logger.info("=" * 50)
         return
 
-    broker = AngelBroker(API_KEY, CLIENT_ID, PASSWORD, TOTP_SECRET)
+    broker = AngelBroker(api_key, client_id, password, totp)
 
     if not broker.login():
         logger.error("Login failed. Cannot place orders.")

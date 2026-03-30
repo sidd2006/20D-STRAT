@@ -6,12 +6,12 @@ Reads today's closed candles, generates breakout signals, saves to signals.json
 import json
 import logging
 from datetime import datetime
+import os
 
-# ---- Your credentials ----
-API_KEY      = ""
-CLIENT_ID    = ""
-PASSWORD     = ""
-TOTP_SECRET  = ""
+api_key = os.getenv("API_KEY")
+client_id = os.getenv("CLIENT_ID")
+password = os.getenv("PASSWORD")
+totp = os.getenv("TOTP_SECRET")
 
 SIGNALS_FILE = "signals.json"
 
