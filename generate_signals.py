@@ -8,10 +8,10 @@ import logging
 from datetime import datetime
 
 # ---- Your credentials ----
-API_KEY      = "KMW3pBs4"
-CLIENT_ID    = "AABZ520811"
-PASSWORD     = "2826"
-TOTP_SECRET  = "ZQFDIWN2563S4WJPG4JNQIUY4U"
+API_KEY      = ""
+CLIENT_ID    = ""
+PASSWORD     = ""
+TOTP_SECRET  = ""
 
 SIGNALS_FILE = "signals.json"
 
