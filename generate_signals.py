@@ -34,7 +34,7 @@ def main():
     logger.info("=" * 50)
     logger.info("PHASE 1: Generating signals after market close")
 
-    broker = AngelBroker(API_KEY, CLIENT_ID, PASSWORD, TOTP_SECRET)
+    broker = AngelBroker(api_key, client_id, password, totp)
 
     if not broker.login():
         logger.error("Login failed.")
