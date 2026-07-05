@@ -1,7 +1,17 @@
 import pyotp
 from SmartApi import SmartConnect
 import logging
+from dotenv import load_dotenv
+import os
 
+
+load_dotenv()
+
+
+api_key = os.getenv("API_KEY")
+client_id = os.getenv("CLIENT_ID")
+password = os.getenv("PASSWORD")
+totp_secret = os.getenv("TOTP_SECRET")
 logger = logging.getLogger(__name__)
 
 
@@ -103,3 +113,12 @@ class AngelBroker:
         except Exception as e:
             logger.error(f"Candle data error: {e}")
             return None
+    @staticmethod
+    def get_symbol_token(symbol):
+        mapping = {
+            "LT": "11483",
+            "ADANIENT": "25",
+            "ADANIPORTS": "15083",
+            "TATASTEEL": "3499"
+        }
+        return mapping.get(symbol)

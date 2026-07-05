@@ -1,8 +1,4 @@
-import ta
-import pandas as pd
-from ta.trend import ADXIndicator
-
-def breakout_strat(price_data, ohlc, entry_lookback=15, exit_lookback=30, momentum_threshold=0.05):
+def breakout_strat(price_data, ohlc=None, entry_lookback=15, exit_lookback=30, momentum_threshold=0.05):
 
 
     # ---------- TREND ----------
