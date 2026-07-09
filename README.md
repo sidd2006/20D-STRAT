@@ -17,22 +17,25 @@ Automated momentum breakout strategy connected to AngelOne SmartAPI for live/pap
 
 ## How it works
 
-The bot runs in two phases every trading day:
+Around 3:20 PM — Signal Generation + Order Placement
+python run_trading_bot.py
 
-**3:35 PM — Signal Generation**
-```
-python generate_signals.py
-```
-Fetches the last 300 days of OHLC data from AngelOne, runs the breakout strategy, and saves entry/exit signals to `signals.json`.
+The bot fetches the latest available OHLC data from AngelOne, runs the breakout strategy, and generates entry/exit signals.
 
-**9:15 AM next morning — Order Placement**
-```
-python place_orders.py
-```
-Reads `signals.json` and places orders at market open. Cleans up the file after execution.
+Before placing any order, it checks:
 
-Both scripts are automated via Windows Task Scheduler.
+Current market status
+Available capital
+Existing positions
+Maximum position limit
+Duplicate orders
+Stop-loss and position-sizing rules
 
+Approved entry and exit orders are then placed before market close through AngelOne SmartAPI.
+
+Signals, orders, positions, and logs are saved for dashboard monitoring and later analysis.
+
+The bot is automated through a scheduler and runs once per trading day near market close.
 ---
 
 ## Strategy Logic
@@ -52,18 +55,17 @@ Both scripts are automated via Windows Task Scheduler.
 ## Project Structure
 
 ```
-├── generate_signals.py      # Phase 1: run at 3:35 PM
-├── place_orders.py          # Phase 2: run at 9:15 AM
+├── run_trading_bot.py     # Generates signals and places orders around 3:20 PM
 ├── src/
-│   ├── strategy.py          # Breakout signal logic
-│   ├── data_loader.py       # AngelOne data fetching + watchlist
-│   ├── data_cleaning_main.py# Outlier removal, missing value handling
-│   ├── backtest.py          # Backtesting engine
-│   └── visualization.py     # Equity curve, drawdown, return plots
+│   ├── strategy.py        # Breakout signal logic
+│   ├── data_loader.py     # AngelOne data fetching + watchlist
+│   ├── data_cleaning_main.py # Outlier removal, missing value handling
+│   ├── backtest.py        # Backtesting engine
+│   └── visualization.py   # Equity curve, drawdown, return plots
 ├── broker/
-│   └── angel_broker.py      # AngelOne SmartAPI wrapper
-├── signals.json             # Generated at 3:35 PM, consumed at 9:15 AM
-└── bot.log                  # Auto-generated logs
+│   └── angel_broker.py    # AngelOne SmartAPI wrapper
+├── logs/                  # Auto-generated logs
+└── signals.json           # Latest generated signals and execution record
 ```
 
 ---
@@ -129,15 +131,5 @@ Outputs: total return, win rate, max drawdown, equity curve, drawdown curve, ret
 
 ---
 
-## VM Access
 
-To connect to the Azure VM used for deployment (example):
-
-```bash
-ssh -i C:\Users\siddh\Downloads\TradingBot_key.pem azureuser@20.189.76.226
-cd 20D-STRAT
-source venv/bin/activate
-```
-
-Adjust the key path and username as needed.
 
